@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="mail_activity_data_bill_approval" model="mail.activity.type">
+            <field name="name">Bill Approval</field>
+            <field name="icon">fa-check-circle</field>
+            <field name="sequence">4</field>
+            <field name="res_model">account.move</field>
+        </record>
+        <record id="mail_activity_data_advance_approval" model="mail.activity.type">
+            <field name="name">Employee Advance Approval</field>
+            <field name="icon">fa-check-circle</field>
+            <field name="sequence">4</field>
+            <field name="res_model">account.move</field>
+        </record>
+        <template id="account_move_template_refuse_reason">
+            <p>Your Entry
+                <span t-if="name != '/'" t-esc="name"/> <span t-if="ref"> (Ref- <t t-esc="ref"/>) </span> has been refused</p>
+            <ul class="o_timeline_tracking_value_list">
+                <li>Reason : <t t-esc="reason"/></li>
+            </ul>
+        </template>
+        <template id="account_move_template_approve">
+            <p>Your bill <t t-esc="name"/> <span t-if="ref"> (Ref- <t t-esc="ref"/>)</span> has been approved</p>
+        </template>
+
+    </data>
+</odoo>

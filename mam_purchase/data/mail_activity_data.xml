@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="mail_activity_data_approval" model="mail.activity.type">
+            <field name="name">Purchase Approval</field>
+            <field name="icon">fa-check-circle</field>
+            <field name="sequence">4</field>
+            <field name="res_model">purchase.order</field>
+        </record>
+
+        <template id="purchase_template_refuse_reason">
+            <p>Your Purchase Order <t t-esc="name"/> has been refused</p>
+            <ul class="o_timeline_tracking_value_list">
+                <li>Reason : <t t-esc="reason"/></li>
+            </ul>
+        </template>
+        <template id="purchase_template_approve">
+            <p>Your Purchase Order <t t-esc="name"/> has been approved</p>
+        </template>
+    </data>
+</odoo>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_approval_account_move" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.approval.account.move</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="25"/>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <block id="account_vendor_bills" position="inside">
+                 <setting id="bill_approvers" >
+                     <field name="bill_approval"/>
+                          <div class="mt16" invisible="not bill_approval">
+                             <field name="bill_approver_ids" readonly="False">
+                                  <tree editable="bottom">
+                                         <field name="user_id"/>
+                                  </tree>
+                             </field>
+                          </div>
+                 </setting>
+                 <setting id="advance_approvers" >
+                     <field name="advance_approval"/>
+                          <div class="mt16" invisible="not advance_approval">
+                             <field name="advance_approver_ids" readonly="False">
+                                  <tree editable="bottom">
+                                         <field name="user_id"/>
+                                  </tree>
+                             </field>
+                          </div>
+                 </setting>
+
+            </block>
+        </field>
+    </record>
+</odoo>

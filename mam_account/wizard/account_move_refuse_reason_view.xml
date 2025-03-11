@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="account_move_refuse_wizard_view_form" model="ir.ui.view">
+        <field name="name">account.move.refuse.wizard.form</field>
+        <field name="model">account.move.refuse.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Bill refuse reason">
+                <field name="move_id" invisible="1"/>
+                <field name="reason"/>
+                <footer>
+                    <button string='Refuse' name="account_move_refuse_reason" type="object" class="oe_highlight"/>
+                    <button string="Cancel" class="oe_link" special="cancel"/>
+                </footer>
+           </form>
+        </field>
+    </record>
+
+    <record id="account_move_refuse_wizard_action" model="ir.actions.act_window">
+        <field name="name">Reason to refuse </field>
+        <field name="res_model">account.move.refuse.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="account_move_refuse_wizard_view_form"/>
+        <field name="target">new</field>
+    </record>
+</odoo>

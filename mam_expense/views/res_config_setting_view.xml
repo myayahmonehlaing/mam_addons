@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_inherit" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.hr.expense.approval</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="25"/>
+        <field name="inherit_id" ref="hr_expense.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <setting id="expense_extract_settings" position="after">
+                 <setting id="expense_approvers" >
+                     <field name="expense_sheet_approval"/>
+                        <div class="mt16" invisible="not expense_sheet_approval">
+                             <field name="expense_approver_ids" readonly="False">
+                                  <tree editable="bottom">
+                                         <field name="user_id"/>
+                                  </tree>
+                             </field>
+                        </div>
+                 </setting>
+            </setting>
+        </field>
+    </record>
+</odoo>

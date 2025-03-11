@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_mam_region_user,access_mam_region_user,model_mam_region,,1,1,1,1

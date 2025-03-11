@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+       <menuitem name="Accounting"
+            id="account_accountant.menu_accounting"
+            groups="account.group_account_readonly,account.group_account_invoice,mam_account.group_account_advance_and_expense"
+            web_icon="account_accountant,static/description/icon.png"
+            sequence="60"/>
+
+   <menuitem id="account.menu_finance_reports" name="Reporting" sequence="20"
+                 parent="account_accountant.menu_accounting"
+                 groups="account.group_account_readonly,account.group_account_invoice,mam_account.group_account_advance_and_expense"/>
+
+       <menuitem id="account.menu_finance_entries" name="Accounting" sequence="4"
+               groups="account.group_account_readonly,mam_account.group_account_advance_and_expense"
+               parent="account_accountant.menu_accounting"
+       />
+
+     <menuitem id="account.menu_finance_entries_management" name="Management" sequence="10"
+               groups="account.group_account_invoice,account.group_account_readonly,mam_account.group_account_advance_and_expense"
+               parent="account.menu_finance_entries"/>
+</odoo>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+       <record id="view_picking_form_sme_inherit" model="ir.ui.view">
+            <field name="name">stock.picking.form.approval.inherit</field>
+            <field name="model">stock.picking</field>
+            <field name="inherit_id" ref="stock.view_picking_form"/>
+                <field name="arch" type="xml">
+                    <field name="date_done" position="replace">
+                            <field name="date_done" string="Effective Date"  readonly="state == 'done'" required="1"/>
+                     </field>
+                      <xpath expr="//field[@name='product_id']" position="after">
+                        <field name="allowed_product_ids" optional="hide"/>
+                      </xpath>
+                     <xpath expr="//field[@name='product_id']" position="attributes">
+                    <attribute name="domain">[('type', 'in', ['product', 'consu']),('id', 'in', allowed_product_ids)]</attribute>
+                </xpath>
+                </field>
+        </record>
+
+       <record id="stock_scrap_form_view_inherit" model="ir.ui.view">
+        <field name="name">stock.scrap.form.inherit</field>
+        <field name="model">stock.scrap</field>
+        <field name="inherit_id" ref="stock.stock_scrap_form_view"/>
+            <field name="arch" type="xml">
+                 <field name="date_done" position="replace">
+                        <field name="date_done" string="Date"  readonly="state == 'done'" />
+                 </field>
+                 <xpath expr="//field[@name='product_id']" position="after">
+                        <field name="allowed_product_ids" invisible="1"/>
+                 </xpath>
+                  <xpath expr="//field[@name='product_id']" position="attributes">
+                    <attribute name="domain">[('id', 'in', allowed_product_ids)]</attribute>
+                </xpath>
+
+            </field>
+        </record>
+        <record id="stock_valuation_layer_tree_inherit" model="ir.ui.view">
+        <field name="name">stock.valuation.layer.tree.inherit</field>
+        <field name="model">stock.valuation.layer</field>
+            <field name="inherit_id" ref="stock_account.stock_valuation_layer_tree"/>
+                <field name="arch" type="xml">
+                     <field name="create_date" position="after">
+                            <field name="date" />
+                     </field>
+                </field>
+        </record>
+        <record id="stock_valuation_layer_form_inherit" model="ir.ui.view">
+            <field name="name">stock.valuation.layer.form.inherit</field>
+            <field name="model">stock.valuation.layer</field>
+                <field name="inherit_id" ref="stock_account.stock_valuation_layer_form"/>
+                    <field name="arch" type="xml">
+                         <field name="create_date" position="after">
+                                <field name="date"  />
+                         </field>
+                    </field>
+        </record>
+            <record model="ir.actions.act_window" id="stock.action_picking_tree_all">
+            <field name="name">Transfers</field>
+            <field name="context">{'default_immediate_transfer':True,'contact_display': 'partner_address', 'default_company_id': allowed_company_ids[0]}</field>
+        </record>
+
+        <record id="view_warehouse_inherit" model="ir.ui.view">
+            <field name="name">stock.warehouse</field>
+            <field name="model">stock.warehouse</field>
+            <field name="inherit_id" ref="stock.view_warehouse"/>
+            <field name="arch" type="xml">
+                <field name="code" position="after">
+                        <field name="region_id" required="1"/>
+                 </field>
+            </field>
+        </record>
+</odoo>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+       <record id="view_hr_expense_sheet_form_inherit" model="ir.ui.view">
+            <field name="name">hr.expense.sheet.form.inherit</field>
+            <field name="model">hr.expense.sheet</field>
+            <field name="inherit_id" ref="hr_expense.view_hr_expense_sheet_form"/>
+            <field name="arch" type="xml">
+                  <field name="employee_id" position="before">
+                        <field name="user_status" invisible="1"/>
+                        <field name="expense_sheet_approval" invisible="1"/>
+                  </field>
+
+                  <button name="action_submit_sheet" position="replace">
+                          <button name="action_submit_sheet"
+                            string="Submit to Manager"
+                            invisible="state != 'draft' or expense_sheet_approval == True"
+                            type="object"
+                            class="oe_highlight o_expense_sheet_submit"
+                            data-hotkey="l"/>
+
+                         <button name="action_approval_submit" string="Submit" type="object"
+                                 invisible = "state != 'draft' or expense_sheet_approval == False" class="oe_highlight o_expense_sheet_submit"/>
+                 </button>
+                 <button name="action_approve_expense_sheets" position="replace">
+                        <button name="action_approve_expense_sheets"
+                            string="Approve"
+                            type="object"
+                            data-hotkey="q"
+                            context="{'validate_analytic': True}"
+                            invisible="not can_approve or state != 'submit' or expense_sheet_approval == True"
+                            class="oe_highlight o_expense_sheet_approve"/>
+                        <button name="approve_approval_expense_sheets"
+                            string="Approve"
+                            type="object"
+                            data-hotkey="q"
+                            context="{'validate_analytic': True}"
+                            invisible="user_status != 'submit' or expense_sheet_approval == False"
+                            class="oe_highlight o_expense_sheet_approve"/>
+                 </button>
+                 <button name="action_refuse_expense_sheets" position="replace">
+                       <button name="action_refuse_expense_sheets"
+                        string="Refuse"
+                        invisible="state not in ('submit', 'approve') or expense_sheet_approval == True"
+                        type="object"
+                        groups="hr_expense.group_hr_expense_team_approver"
+                        data-hotkey="x"/>
+
+                     <button name="action_refuse_expense_sheets"
+                            string="Refuse"
+                           invisible = "user_status != 'submit' or expense_sheet_approval == False"
+                            type="object"
+                            groups="hr_expense.group_hr_expense_team_approver"
+                            data-hotkey="x"/>
+                 </button>
+                 <xpath expr="//page[@name='expenses']" position="after" >
+                    <page string="Approver(s)" name="approvers"   invisible = "expense_sheet_approval == False" >
+                        <field name="approver_ids" mode="tree,mode"  readonly = "state not in ['draft','sent']" >
+                                <tree editable="bottom" decoration-success="status=='approve'" decoration-warning="status in ['submit','waiting']" decoration-danger="status=='cancel'">
+                                    <field name="existing_sheet_user_ids" column_invisible="True"/>
+                                    <field name="company_id" column_invisible="True"/>
+                                    <field name="user_id" string="Approver" />
+                                    <field name="status"/>
+<!--                                    <button name="action_create_activity" type="object"-->
+<!--                                            icon="fa-paper-plane"-->
+<!--                                            width="0.1"-->
+<!--                                            role="img" title="Submit Approval"-->
+<!--                                            readonly = "status not in 'draft'"-->
+<!--                                            />-->
+                                </tree>
+                                <kanban class="o_kanban_mobile">
+                                    <field name="user_id"/>
+                                    <field name="status"/>
+                                    <templates>
+                                        <t t-name="kanban-box">
+                                            <div class="oe_kanban_card oe_kanban_global_click">
+                                                <div class="o_kanban_content">
+                                                    <t t-esc="record.user_id.value"/>
+                                                    <t t-if="record.status.raw_value">
+                                                        <t t-set="classname" t-value="{'approved': 'badge-success', 'pending': 'badge-warning', 'refused': 'badge-danger'}[record.status.raw_value] || 'badge-light'"/>
+                                                        <span t-esc="record.status.raw_value" t-attf-class="float-right badge-pill {{ classname }}"/>
+                                                    </t>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </templates>
+                                </kanban>
+                                <form>
+                                    <group>
+                                        <field name="user_id"/>
+                                        <field name="company_id" invisible="1"/>
+                                        <field name="existing_sheet_user_ids" invisible="1"/>
+                                    </group>
+                                </form>
+                            </field>
+                     </page>
+                </xpath>
+            </field>
+       </record>
+
+
+</odoo>

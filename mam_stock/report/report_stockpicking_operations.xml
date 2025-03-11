@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+      <template id="report_picking_inherit" name="MAM Report Picking" inherit_id="stock.report_picking">
+            <xpath expr="//table[1]" position="replace">
+                 <table class="table table-sm" t-if="o.move_line_ids and o.move_ids_without_package">
+                       <thead>
+                            <tr>
+                                <th name="th_product">
+                                    <strong>Product</strong>
+                                </th>
+                                <th>
+                                    <strong>Quantity</strong>
+                                </th>
+                                <th name="th_from" t-if="o.picking_type_id.code != 'incoming'" align="left" groups="stock.group_stock_multi_locations">
+                                    <strong>From</strong>
+                                </th>
+                                <th name="th_to" t-if="o.picking_type_id.code != 'outgoing'" groups="stock.group_stock_multi_locations">
+                                    <strong>To</strong>
+                                </th>
+                                <th name="do_no" class="text-center">
+                                   <strong>DO No.</strong>
+                                </th>
+                                <th name="vehicle_no" class="text-center" >
+                                    <strong>Vehicle No</strong>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- In case you come across duplicated lines, ask NIM or LAP -->
+                            <tr t-foreach="o.move_ids_without_package.sorted(lambda m: (m.location_id.complete_name, m.location_dest_id.complete_name))" t-as="m">
+                                <td>
+                                    <span t-field="m.product_id.display_name">Customizable Desk</span><br/>
+                                    <span t-if="m.product_id.description_picking" t-field="m.product_id.description_picking">Description on transfer</span>
+                                </td>
+                                <td>
+                                    <span t-field="m.quantity">3.00</span>
+                                    <span t-field="m.product_uom" groups="uom.group_uom">units</span>
+                                    <span t-if="m.product_packaging_id">
+                                        <span t-if="o.state != 'done'">
+                                            (<span t-field="m.product_packaging_qty" t-options='{"widget": "integer"}'/> <span t-field="m.product_packaging_id.name"/>)
+                                        </span>
+                                        <span t-if="o.state == 'done'">
+                                            (<span t-field="m.product_packaging_qty" t-options='{"widget": "integer"}'/> <span t-field="m.product_packaging_id.name"/>)
+                                        </span>
+                                    </span>
+                                </td>
+                                <td t-if="o.picking_type_id.code != 'incoming'" groups="stock.group_stock_multi_locations">
+                                    <span t-esc="m.location_id.display_name">WH/Stock</span>
+                                </td>
+                                <td t-if="o.picking_type_id.code != 'outgoing'" groups="stock.group_stock_multi_locations">
+                                    <div>
+                                        <span t-field="m.location_dest_id">WH/Outgoing</span>
+
+                                    </div>
+                                </td>
+                                <td>
+                                      <span t-field="m.x_studio_do_no"/>
+                                </td>
+                                <td>
+                                      <span t-field="m.x_studio_vehicle_no"/>
+                                </td>
+
+                            </tr>
+                          </tbody>
+                    </table>
+            </xpath>
+
+      </template>
+
+</odoo>

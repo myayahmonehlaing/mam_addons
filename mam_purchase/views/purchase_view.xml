@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+       <record id="purchase_order_form_inherit" model="ir.ui.view">
+            <field name="name">purchase.order.form.inherit</field>
+            <field name="model">purchase.order</field>
+            <field name="inherit_id" ref="purchase.purchase_order_form"/>
+            <field name="arch" type="xml">
+                 <field name="partner_id" position="before">
+                    <field name="user_status" invisible="1"/>
+                    <field name="purchase_order_approval" invisible="1"/>
+                 </field>
+
+                  <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='products']/field[@name='order_line']/tree[1]/field[@name='name']" position="after">
+                    <field name="allowed_product_ids" optional="hide"/>
+                  </xpath>
+
+                  <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='products']/field[@name='order_line']/tree[1]/field[@name='product_id']" position="attributes">
+                    <attribute name="domain">["&amp;", ("purchase_ok", "=", True), ("id", "in", allowed_product_ids)]</attribute>
+                  </xpath>
+
+                 <xpath expr="//form/header/button[@id='draft_confirm']" position="replace">
+                    <button name="button_confirm" type="object" invisible="state != 'draft' or purchase_order_approval == True" context="{'validate_analytic': True}"
+                            string="Confirm Order" id="draft_confirm" data-hotkey="q"/>
+                    <button name="action_submit" type="object"  string="Submit" class="oe_highlight"
+                      invisible = "state != 'draft' or purchase_order_approval == False"  />
+                  </xpath>
+                 <xpath expr="//form/header/button[@id='bid_confirm']" position="replace">
+                    <button name="button_confirm" type="object" invisible="state != 'sent'  or purchase_order_approval == True" string="Confirm Order" context="{'validate_analytic': True}"
+                            class="oe_highlight" id="bid_confirm" data-hotkey="q"/>
+                     <button name="action_submit" type="object" string="Submit" class="oe_highlight"
+                     invisible = "state != 'sent' or purchase_order_approval == False"  />
+                  </xpath>
+
+                <field name="partner_id" position="attributes">
+                     <attribute name="readonly"> state in ['purchase','done', 'cancel','to approve'] and user_status != 'to approve'</attribute>
+                </field>
+
+                <field name="currency_id" position="attributes">
+                     <attribute name="readonly"> state in ['purchase','done', 'cancel','to approve'] and user_status != 'to approve' </attribute>
+                </field>
+                   <field name="date_order" position="attributes">
+                    <attribute name="readonly"> state in ['purchase','done', 'cancel','to approve'] and user_status != 'to approve'</attribute>
+                </field>
+                 <field name="date_planned" position="attributes">
+                    <attribute name="readonly"> state in ['purchase','done', 'cancel','to approve'] and user_status != 'to approve'</attribute>
+                </field>
+<!--                 <field name="picking_type_id" position="attributes">-->
+<!--                     <attribute name="readonly"> state in ['to approve','purchase','done', 'cancel']</attribute>-->
+<!--                </field>-->
+
+                 <field name="order_line" position="attributes">
+                    <attribute name="readonly"> state in ['purchase','done', 'cancel','to approve'] and user_status != 'to approve'</attribute>
+                 </field>
+
+                 <xpath expr="//form/header/button[@name='button_approve']" position="replace">
+                     <button name="action_approve" type="object"  string="Approve Order"
+                             class="oe_highlight" invisible = "user_status != 'to approve'" />
+                     <button name="%(mam_purchase.purchase_refuse_wizard_action)d"  type="action" string="Refuse Order"
+                             class="oe_highlight" invisible = "user_status != 'to approve'" />
+
+                    <!--name="button_refuse"-->
+
+                 </xpath>
+                 <xpath expr="//page[@name='purchase_delivery_invoice']" position="after">
+                     <page string="Approver(s)" name="purchase_approvers"  invisible = "purchase_order_approval == False" >
+                            <field name="approver_ids" mode="tree,kanban"  readonly = "state in ['to approve','done','purchase']">
+                                <tree editable="bottom" decoration-success="status=='approve'" decoration-warning="status in ['to approve','waiting']" decoration-danger="(status in ('cancel','refused'))">
+                                    <field name="user_id" string="Approver" readonly = "status != 'new'"/>
+                                    <field name="existing_order_user_ids" column_invisible="True"/>
+                                    <field name="company_id" column_invisible="True"/>
+                                    <field name="status"/>
+
+                                </tree>
+                                <kanban class="o_kanban_mobile">
+                                    <field name="user_id"/>
+                                    <field name="status"/>
+                                    <templates>
+                                        <t t-name="kanban-box">
+                                            <div class="oe_kanban_card oe_kanban_global_click">
+                                                <div class="o_kanban_content">
+                                                    <t t-esc="record.user_id.value"/>
+                                                    <t t-if="record.status.raw_value">
+                                                        <t t-set="classname" t-value="{'approved': 'badge-success', 'pending': 'badge-warning', 'cancel': 'badge-danger'}[record.status.raw_value] || 'badge-light'"/>
+                                                        <span t-esc="record.status.raw_value" t-attf-class="float-right badge-pill {{ classname }}"/>
+                                                    </t>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </templates>
+                                </kanban>
+                                <form>
+                                    <group>
+                                        <field name="user_id"/>
+                                        <field name="company_id" invisible="1"/>
+                                        <field name="existing_order_user_ids" invisible="1"/>
+                                    </group>
+                                </form>
+                            </field>
+                     </page>
+                </xpath>
+            </field>
+       </record>
+</odoo>

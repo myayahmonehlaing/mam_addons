@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_approval_purchase" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.approval.purchase</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority" eval="25"/>
+        <field name="inherit_id" ref="purchase.res_config_settings_view_form_purchase"/>
+        <field name="arch" type="xml">
+            <setting id="po_order_approval" position="after">
+                 <setting id="purchase_approvers" >
+                       <field name="purchase_order_approval"/>
+                            <div class="mt16" invisible="not purchase_order_approval">
+                                 <field name="purchase_approver_ids" readonly="False">
+                                      <tree editable="bottom">
+                                             <field name="user_id"/>
+                                      </tree>
+                                 </field>
+                            </div>
+                 </setting>
+            </setting>
+        </field>
+    </record>
+</odoo>

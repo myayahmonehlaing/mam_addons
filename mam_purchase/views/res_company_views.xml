@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+        <record id="view_company_form_inherit" model="ir.ui.view">
+            <field name="name">res.company.form.inherit</field>
+            <field name="model">res.company</field>
+             <field name="inherit_id" ref="base.view_company_form"/>
+            <field name="arch" type="xml">
+                  <group name="social_media" position="after">
+                        <group name="purchase_approvers" string="Purchase Approvers">
+                            <field name="purchase_approver_ids" widget="many2many_tags" readonly="1"/>
+                        </group>
+                  </group>
+            </field>
+        </record>
+    </data>
+</odoo>
