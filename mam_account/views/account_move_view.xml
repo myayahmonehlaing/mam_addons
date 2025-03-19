@@ -1,194 +1,249 @@
 <odoo>
-   <data>
-      <record id="action_move_in_invoice_advance" model="ir.actions.act_window">
+    <data>
+        <record id="action_move_in_invoice_advance" model="ir.actions.act_window">
             <field name="name">Employee Advance</field>
             <field name="res_model">account.move</field>
-            <field name="view_mode">tree,kanban,form,activity</field>
+            <field name="view_mode">list,kanban,form,activity</field>
             <field name="view_id" ref="account.view_in_invoice_bill_tree"/>
             <field name="search_view_id" ref="account.view_account_invoice_filter"/>
             <field name="domain">[('move_type', '=', 'in_invoice'),('is_employee_advance', '=',True)]</field>
-            <field name="context">{'default_move_type': 'in_invoice','default_is_employee_advance': True, 'display_account_trust': True}</field>
-            <field name="help" type="html">
-              <p class="o_view_nocontent_smiling_face">
-                Create a employee advance
-              </p><p>
-                Create invoices, register payments and keep track of the discussions with your vendors.
-              </p>
+            <field name="context">{'default_move_type': 'in_invoice','default_is_employee_advance': True,
+                'display_account_trust': True}
             </field>
-      </record>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create a employee advance
+                </p>
+                <p>
+                    Create invoices, register payments and keep track of the discussions with your vendors.
+                </p>
+            </field>
+        </record>
 
-      <menuitem id="menu_action_move_in_invoice_advance" action="action_move_in_invoice_advance" sequence="2" parent="account.menu_finance_payables"/>
+        <menuitem id="menu_action_move_in_invoice_advance" action="action_move_in_invoice_advance" sequence="2"
+                  parent="account.menu_finance_payables"/>
 
-       <record id="account.action_move_in_invoice_type" model="ir.actions.act_window">
+        <record id="account.action_move_in_invoice_type" model="ir.actions.act_window">
             <field name="name">Bills</field>
             <field name="domain">[('move_type', '=', 'in_invoice'),('is_employee_advance', '=',False)]</field>
-            <field name="context">{'default_move_type': 'in_invoice','default_is_employee_advance': False, 'display_account_trust': True}</field>
-       </record>
+            <field name="context">{'default_move_type': 'in_invoice','default_is_employee_advance': False,
+                'display_account_trust': True}
+            </field>
+        </record>
 
         <record id="action_view_expense" model="ir.actions.act_window">
-            <field name="name">Expense </field>
+            <field name="name">Expense</field>
             <field name="res_model">hr.expense.sheet</field>
-            <field name="view_mode">tree,form</field>
+            <field name="view_mode">list,form</field>
             <field name="domain">[('advance_id', '=', active_id)]</field>
             <field name="context">{'search_default_advance_id': active_id,'default_advance_id': active_id}</field>
             <field name="help" type="html">
-                <p> </p>
+                <p></p>
             </field>
-     </record>
+        </record>
 
-       <record id="view_move_form_inherit" model="ir.ui.view">
-       <field name="name">account.move.form.inherit</field>
-       <field name="model">account.move</field>
-       <field name="inherit_id" ref="account.view_move_form"/>
-       <field name="arch" type="xml">
-              <xpath expr="//div[@name='button_box']" position="inside">
-                <button class="oe_stat_button" icon="fa-diamond" type="action" name="%(mam_account.action_view_expense)d">
-                   <field widget="statinfo" name="hr_expense_sheet_count" string="Expense"/>
-                </button>
-              </xpath>
-            <field name="partner_id" position="after">
+        <record id="view_move_form_inherit" model="ir.ui.view">
+            <field name="name">account.move.form.inherit</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//div[@name='button_box']" position="inside">
+                    <button class="oe_stat_button" icon="fa-diamond" type="action"
+                            name="%(mam_account.action_view_expense)d">
+                        <field widget="statinfo" name="hr_expense_sheet_count" string="Expense"/>
+                    </button>
+                </xpath>
+                <field name="partner_id" position="after">
                     <field name="user_status" invisible="1"/>
                     <field name="is_employee_advance" invisible="1"/>
                     <field name="bill_approval" invisible="1"/>
                     <field name="advance_approval" invisible="1"/>
-                 </field>
+                </field>
 
-                 <xpath expr="//form/header/button[@name='action_post'][2]" position="replace">
-                        <button name="action_post" string="Confirm" class="oe_highlight" type="object" groups="mam_account.group_account_advance_and_expense,account.group_account_invoice" data-hotkey="q" context="{'validate_analytic': True}" invisible="hide_post_button or move_type in ['entry','in_invoice'] or display_inactive_currency_warning"/>
+                <xpath expr="//form/header/button[@name='action_post'][2]" position="replace">
+                    <button name="action_post" string="Confirm" class="oe_highlight" type="object"
+                            groups="mam_account.group_account_advance_and_expense,account.group_account_invoice"
+                            data-hotkey="q" context="{'validate_analytic': True}"
+                            invisible="hide_post_button or move_type in ['entry','in_invoice'] or display_inactive_currency_warning"/>
 
-                        <button name="action_post" string="Confirm" class="oe_highlight" type="object" groups="mam_account.group_account_advance_and_expense,account.group_account_invoice" data-hotkey="q" context="{'validate_analytic': True}" invisible="is_employee_advance == True or move_type in ['entry','out_invoice'] or bill_approval== True or hide_post_button or display_inactive_currency_warning "/>
-                        <button name="action_post" string="Confirm" class="oe_highlight" type="object" groups="mam_account.group_account_advance_and_expense,account.group_account_invoice" data-hotkey="q" context="{'validate_analytic': True}" invisible="is_employee_advance == False or move_type == 'entry'  or advance_approval== True or hide_post_button or  display_inactive_currency_warning"/>
+                    <button name="action_post" string="Confirm" class="oe_highlight" type="object"
+                            groups="mam_account.group_account_advance_and_expense,account.group_account_invoice"
+                            data-hotkey="q" context="{'validate_analytic': True}"
+                            invisible="is_employee_advance == True or move_type in ['entry','out_invoice'] or bill_approval== True or hide_post_button or display_inactive_currency_warning "/>
+                    <button name="action_post" string="Confirm" class="oe_highlight" type="object"
+                            groups="mam_account.group_account_advance_and_expense,account.group_account_invoice"
+                            data-hotkey="q" context="{'validate_analytic': True}"
+                            invisible="is_employee_advance == False or move_type == 'entry'  or advance_approval== True or hide_post_button or  display_inactive_currency_warning"/>
 
-                        <button name="action_submit" string="Submit" type="object" class="oe_highlight" invisible="move_type != 'in_invoice'  or is_employee_advance == True or bill_approval == False or state != 'draft'"/>
-                        <button name="action_submit" string="Submit" type="object" class="oe_highlight" invisible="move_type != 'in_invoice' or is_employee_advance != True or advance_approval == False or state != 'draft'"/>
+                    <button name="action_submit" string="Submit" type="object" class="oe_highlight"
+                            invisible="move_type != 'in_invoice'  or is_employee_advance == True or bill_approval == False or state != 'draft'"/>
+                    <button name="action_submit" string="Submit" type="object" class="oe_highlight"
+                            invisible="move_type != 'in_invoice' or is_employee_advance != True or advance_approval == False or state != 'draft'"/>
 
-                        <button name="button_approve" type="object" string="Approve " class="oe_highlight" invisible="user_status != 'to approve'"/>
-                        <button name="%(mam_account.account_move_refuse_wizard_action)d"  type="action" string="Refuse " class="oe_highlight" invisible="user_status != 'to approve'"/>
+                    <button name="button_approve" type="object" string="Approve " class="oe_highlight"
+                            invisible="user_status != 'to approve'"/>
+                    <button name="%(mam_account.account_move_refuse_wizard_action)d" type="action" string="Refuse "
+                            class="oe_highlight" invisible="user_status != 'to approve'"/>
 
-                 </xpath>
-                 <field name="partner_id" position="after">
-                     <field name="related_advance_id" invisible="is_employee_advance"/>
-                 </field>
-                 <field name="partner_id" position="attributes">
-                     <attribute name="readonly">
+                </xpath>
+                <field name="partner_id" position="after">
+                    <field name="related_advance_id" invisible="is_employee_advance"/>
+                </field>
+
+                <field name="partner_id" position="attributes">
+                    <attribute name="readonly">
                         state != 'draft' and user_status != 'to approve'
-                     </attribute>
-                 </field>
-                 <field name="invoice_date" position="attributes">
-                     <attribute name="readonly">
-                        state != 'draft' and user_status != 'to approve'
-                     </attribute>
-                 </field>
-                  <field name="invoice_line_ids" position="attributes">
-                     <attribute name="readonly">
-                        state != 'draft' and user_status != 'to approve'
-                     </attribute>
-                 </field>
-                <xpath expr="//form[1]/sheet[1]/group[1]/group[2]/div[@name='journal_div']/field[@name='journal_id']" position="attributes">
-                     <attribute name="readonly">
-                       state != 'draft' and user_status != 'to approve'
-                     </attribute>
+                    </attribute>
+                </field>
+
+                <!-- Here user_status is to approve for the invoice of approve person can't select the bill date to give approve -->
+<!--                <field name="invoice_date" position="attributes">-->
+<!--                    <attribute name="readonly">-->
+<!--                        state != 'draft' and user_status != 'to approve'-->
+<!--                    </attribute>-->
+<!--                </field>-->
+                <xpath expr="//group[@id='header_right_group']/field[@name='invoice_date'][2]" position="attributes">
+                    <attribute name="readonly">state != 'draft' and user_status != 'to approve' </attribute>
+                </xpath>
+                <xpath expr="//group[@id='header_right_group']/field[@name='invoice_date'][1]" position="attributes">
+                    <attribute name="readonly">state != 'draft' and user_status != 'to approve' </attribute>
+                </xpath>
+<!--                <xpath expr="//group[@id='header_right_group']/field[@name='invoice_date']" position="attributes">-->
+<!--                    <attribute name="readonly">state=='posted'</attribute>-->
+<!--                </xpath>-->
+
+                <xpath expr="//notebook/page[@id='invoice_tab']/field[@name='invoice_line_ids']" position="attributes">
+                    <attribute name="readonly">state != 'draft' and user_status != 'to approve'</attribute>
                 </xpath>
 
-               <xpath expr="//div[@name='journal_div']" position="attributes">
+<!--                <field name="invoice_line_ids" position="attributes">-->
+<!--                    <attribute name="readonly">-->
+<!--                        state != 'draft' and user_status != 'to approve'-->
+<!--                    </attribute>-->
+<!--                </field>-->
+                <xpath expr="//form[1]/sheet[1]/group[1]/group[2]/div[@name='journal_div']/field[@name='journal_id']"
+                       position="attributes">
+                    <attribute name="readonly">
+                        state != 'draft' and user_status != 'to approve'
+                    </attribute>
+                </xpath>
+
+                <xpath expr="//div[@name='journal_div']" position="attributes">
                     <attribute name="groups">
                         mam_account.group_account_advance_and_expense
                     </attribute>
-               </xpath>
-               <xpath expr="//label[@for='journal_id']" position="attributes">
+                </xpath>
+                <xpath expr="//label[@for='journal_id']" position="attributes">
                     <attribute name="groups">
                         mam_account.group_account_advance_and_expense
                     </attribute>
-               </xpath>
+                </xpath>
 
 
-                 <xpath expr="//page[@id='aml_tab']" position="after">
-                     <page string="Approver(s)" name="bill_approvers" invisible="move_type !='in_invoice'or is_employee_advance == True or bill_approval == False">
-                            <field name="approver_ids" mode="tree,kanban" readonly="state in ['done','posted']">
-                                <tree editable="bottom" decoration-success="status=='approve'" decoration-warning="status in ['to approve','waiting']" decoration-danger="status=='refused'">
-                                    <field name="existing_move_user_ids" column_invisible="True"/>
-                                    <field name="company_id" column_invisible="True"/>
-                                    <field name="user_id" string="Approver" readonly="status != 'new'" force_save="1" options="{'no_create': True}"/>
-                                    <field name="status"/>
-                                    <button name="action_create_activity" type="object" icon="fa-paper-plane" groups="base.group_no_one" width="0.1" role="img" title="Submit Approval" invisible="status != 'new'"/>
-                                </tree>
-                                <kanban class="o_kanban_mobile">
-                                    <field name="user_id"/>
-                                    <field name="status"/>
-                                    <templates>
-                                        <t t-name="kanban-box">
-                                            <div class="oe_kanban_card oe_kanban_global_click">
-                                                <div class="o_kanban_content">
-                                                    <t t-esc="record.user_id.value"/>
-                                                    <t t-if="record.status.raw_value">
-                                                        <t t-set="classname" t-value="{'approved': 'badge-success', 'pending': 'badge-warning', 'cancel': 'badge-danger'}[record.status.raw_value] || 'badge-light'"/>
-                                                        <span t-esc="record.status.raw_value" t-attf-class="float-right badge-pill {{ classname }}"/>
-                                                    </t>
-                                                </div>
+                <xpath expr="//page[@id='aml_tab']" position="after">
+                    <page string="Approver(s)" name="bill_approvers"
+                          invisible="move_type !='in_invoice'or is_employee_advance == True or bill_approval == False">
+                        <field name="approver_ids" mode="list,kanban" readonly="state in ['done','posted']">
+                            <list editable="bottom" decoration-success="status=='approve'"
+                                  decoration-warning="status in ['to approve','waiting']"
+                                  decoration-danger="status=='refused'">
+                                <field name="existing_move_user_ids" column_invisible="True"/>
+                                <field name="company_id" column_invisible="True"/>
+                                <field name="user_id" string="Approver" readonly="status != 'new'" force_save="1"
+                                       options="{'no_create': True}"/>
+                                <field name="status"/>
+                                <button name="action_create_activity" type="object" icon="fa-paper-plane"
+                                        groups="base.group_no_one" width="0.1" role="img" title="Submit Approval"
+                                        invisible="status != 'new'"/>
+                            </list>
+                            <kanban class="o_kanban_mobile">
+                                <field name="user_id"/>
+                                <field name="status"/>
+                                <templates>
+                                    <t t-name="kanban-box">
+                                        <div class="oe_kanban_card oe_kanban_global_click">
+                                            <div class="o_kanban_content">
+                                                <t t-esc="record.user_id.value"/>
+                                                <t t-if="record.status.raw_value">
+                                                    <t t-set="classname"
+                                                       t-value="{'approved': 'badge-success', 'pending': 'badge-warning', 'cancel': 'badge-danger'}[record.status.raw_value] || 'badge-light'"/>
+                                                    <span t-esc="record.status.raw_value"
+                                                          t-attf-class="float-right badge-pill {{ classname }}"/>
+                                                </t>
                                             </div>
-                                        </t>
-                                    </templates>
-                                </kanban>
-                                <form>
-                                    <group>
-                                        <field name="user_id"/>
-                                        <field name="company_id" invisible="1"/>
-                                        <field name="existing_move_user_ids" invisible="1"/>
-                                    </group>
-                                </form>
-                            </field>
-                     </page>
-                      <page string=" Approver(s)" name="advance_approvers" invisible=" is_employee_advance != True or advance_approval == False">
-                            <field name="approver_ids" mode="tree,kanban" readonly="state in ['done','posted']">
-                                <tree editable="bottom" decoration-success="status=='approve'" decoration-warning="status in ['to approve','waiting']" decoration-danger="status=='refused'">
-                                    <field name="existing_move_user_ids" column_invisible="True"/>
-                                    <field name="company_id" column_invisible="True"/>
-                                    <field name="user_id" string="Approver" readonly="status != 'new'" force_save="1" options="{'no_create': True}"/>
-                                    <field name="status"/>
-                                    <button name="action_create_activity" type="object" icon="fa-paper-plane" groups="base.group_no_one" width="0.1" role="img" title="Submit Approval" invisible="status != 'new'"/>
-
-                                </tree>
-                                <kanban class="o_kanban_mobile">
+                                        </div>
+                                    </t>
+                                </templates>
+                            </kanban>
+                            <form>
+                                <group>
                                     <field name="user_id"/>
-                                    <field name="status"/>
-                                    <templates>
-                                        <t t-name="kanban-box">
-                                            <div class="oe_kanban_card oe_kanban_global_click">
-                                                <div class="o_kanban_content">
-                                                    <t t-esc="record.user_id.value"/>
-                                                    <t t-if="record.status.raw_value">
-                                                        <t t-set="classname" t-value="{'approved': 'badge-success', 'pending': 'badge-warning', 'cancel': 'badge-danger'}[record.status.raw_value] || 'badge-light'"/>
-                                                        <span t-esc="record.status.raw_value" t-attf-class="float-right badge-pill {{ classname }}"/>
-                                                    </t>
-                                                </div>
+                                    <field name="company_id" invisible="1"/>
+                                    <field name="existing_move_user_ids" invisible="1"/>
+                                </group>
+                            </form>
+                        </field>
+                    </page>
+                    <page string=" Approver(s)" name="advance_approvers"
+                          invisible=" is_employee_advance != True or advance_approval == False">
+                        <field name="approver_ids" mode="list,kanban" readonly="state in ['done','posted']">
+                            <list editable="bottom" decoration-success="status=='approve'"
+                                  decoration-warning="status in ['to approve','waiting']"
+                                  decoration-danger="status=='refused'">
+                                <field name="existing_move_user_ids" column_invisible="True"/>
+                                <field name="company_id" column_invisible="True"/>
+                                <field name="user_id" string="Approver" readonly="status != 'new'" force_save="1"
+                                       options="{'no_create': True}"/>
+                                <field name="status"/>
+                                <button name="action_create_activity" type="object" icon="fa-paper-plane"
+                                        groups="base.group_no_one" width="0.1" role="img" title="Submit Approval"
+                                        invisible="status != 'new'"/>
+
+                            </list>
+                            <kanban class="o_kanban_mobile">
+                                <field name="user_id"/>
+                                <field name="status"/>
+                                <templates>
+                                    <t t-name="kanban-box">
+                                        <div class="oe_kanban_card oe_kanban_global_click">
+                                            <div class="o_kanban_content">
+                                                <t t-esc="record.user_id.value"/>
+                                                <t t-if="record.status.raw_value">
+                                                    <t t-set="classname"
+                                                       t-value="{'approved': 'badge-success', 'pending': 'badge-warning', 'cancel': 'badge-danger'}[record.status.raw_value] || 'badge-light'"/>
+                                                    <span t-esc="record.status.raw_value"
+                                                          t-attf-class="float-right badge-pill {{ classname }}"/>
+                                                </t>
                                             </div>
-                                        </t>
-                                    </templates>
-                                </kanban>
-                                <form>
-                                    <group>
-                                        <field name="user_id"/>
-                                        <field name="company_id" invisible="1"/>
-                                        <field name="existing_move_user_ids" invisible="1"/>
-                                    </group>
-                                </form>
-                            </field>
-                     </page>
+                                        </div>
+                                    </t>
+                                </templates>
+                            </kanban>
+                            <form>
+                                <group>
+                                    <field name="user_id"/>
+                                    <field name="company_id" invisible="1"/>
+                                    <field name="existing_move_user_ids" invisible="1"/>
+                                </group>
+                            </form>
+                        </field>
+                    </page>
 
-                 </xpath>
-       </field>
-       </record>
-
-       <record id="view_move_tree_inherit" model="ir.ui.view">
-            <field name="name">account.move.tree.inherit</field>
-            <field name="model">account.move</field>
-            <field name="inherit_id" ref="account.view_in_invoice_bill_tree"/>
-            <field name="arch" type="xml">
-                <xpath expr="//field[@name='state']" position="after">
-                     <field name="hr_expense_sheet_count" optional="show" string="Related Expense" widget="color_picker"/>
                 </xpath>
             </field>
         </record>
 
-  </data>
+        <record id="view_move_tree_inherit" model="ir.ui.view">
+            <field name="name">account.move.list.inherit</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_in_invoice_bill_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='status_in_payment']" position="after">
+                    <field name="hr_expense_sheet_count" optional="show" string="Related Expense"
+                           widget="color_picker"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
 </odoo>

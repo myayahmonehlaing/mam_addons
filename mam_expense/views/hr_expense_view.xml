@@ -54,19 +54,19 @@
                  </button>
                  <xpath expr="//page[@name='expenses']" position="after" >
                     <page string="Approver(s)" name="approvers"   invisible = "expense_sheet_approval == False" >
-                        <field name="approver_ids" mode="tree,mode"  readonly = "state not in ['draft','sent']" >
-                                <tree editable="bottom" decoration-success="status=='approve'" decoration-warning="status in ['submit','waiting']" decoration-danger="status=='cancel'">
+                        <field name="approver_ids" mode="list,mode"  readonly = "state not in ['draft','sent']" >
+                                <list editable="bottom" decoration-success="status=='approve'" decoration-warning="status in ['submit','waiting']" decoration-danger="status=='cancel'">
                                     <field name="existing_sheet_user_ids" column_invisible="True"/>
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="user_id" string="Approver" />
                                     <field name="status"/>
-<!--                                    <button name="action_create_activity" type="object"-->
-<!--                                            icon="fa-paper-plane"-->
-<!--                                            width="0.1"-->
-<!--                                            role="img" title="Submit Approval"-->
-<!--                                            readonly = "status not in 'draft'"-->
-<!--                                            />-->
-                                </tree>
+                                    <button name="action_create_activity" type="object"
+                                            icon="fa-paper-plane"
+                                            width="0.1"
+                                            role="img" title="Submit Approval"
+                                            readonly = "status not in 'draft'"
+                                            />
+                                </list>
                                 <kanban class="o_kanban_mobile">
                                     <field name="user_id"/>
                                     <field name="status"/>

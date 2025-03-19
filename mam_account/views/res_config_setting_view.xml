@@ -11,9 +11,9 @@
                      <field name="bill_approval"/>
                           <div class="mt16" invisible="not bill_approval">
                              <field name="bill_approver_ids" readonly="False">
-                                  <tree editable="bottom">
+                                  <list editable="bottom">
                                          <field name="user_id"/>
-                                  </tree>
+                                  </list>
                              </field>
                           </div>
                  </setting>
@@ -21,9 +21,9 @@
                      <field name="advance_approval"/>
                           <div class="mt16" invisible="not advance_approval">
                              <field name="advance_approver_ids" readonly="False">
-                                  <tree editable="bottom">
+                                  <list editable="bottom">
                                          <field name="user_id"/>
-                                  </tree>
+                                  </list>
                              </field>
                           </div>
                  </setting>

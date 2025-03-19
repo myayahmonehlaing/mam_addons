@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
@@ -7,6 +6,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.tools import OrderedSet, groupby
 from odoo.tools.float_utils import float_compare, float_is_zero, float_round
 from odoo.tools.misc import format_datetime
+
 
 class StockMove(models.Model):
     _inherit = "stock.move"
@@ -18,9 +18,8 @@ class StockMove(models.Model):
 
     allowed_product_ids = fields.Many2many("product.product", compute='_compute_allowed_product_ids')
 
-
-    @api.depends('picking_id.picking_type_id','picking_id.picking_type_id.warehouse_id'
-        ,'picking_id.picking_type_id.warehouse_id.region_id')
+    @api.depends('picking_id.picking_type_id', 'picking_id.picking_type_id.warehouse_id'
+        , 'picking_id.picking_type_id.warehouse_id.region_id')
     def _compute_allowed_product_ids(self):
         for record in self:
             record.allowed_product_ids = self.env["product.product"].search(
@@ -43,6 +42,7 @@ class StockMove(models.Model):
     def _action_confirm(self, merge=False, merge_into=False):
         moves = super(StockMove, self)._action_confirm(merge=merge, merge_into=merge_into)
         return moves
+
 
 class StockMoveLine(models.Model):
     _inherit = "stock.move.line"
@@ -115,7 +115,7 @@ class StockMoveLine(models.Model):
         if ml_ids_tracked_without_lot:
             mls_tracked_without_lot = self.env['stock.move.line'].browse(ml_ids_tracked_without_lot)
             raise UserError(_('You need to supply a Lot/Serial Number for product: \n - ') +
-                              '\n - '.join(mls_tracked_without_lot.mapped('product_id.display_name')))
+                            '\n - '.join(mls_tracked_without_lot.mapped('product_id.display_name')))
         ml_to_create_lot = self.env['stock.move.line'].browse(ml_ids_to_create_lot)
         ml_to_create_lot._create_and_assign_production_lot()
 
@@ -132,7 +132,8 @@ class StockMoveLine(models.Model):
             # if this move line is force assigned, unreserve elsewhere if needed
             ml._synchronize_quant(-ml.quantity_product_uom, ml.location_id, action="reserved")
             available_qty, in_date = ml._synchronize_quant(-ml.quantity_product_uom, ml.location_id)
-            ml._synchronize_quant(ml.quantity_product_uom, ml.location_dest_id, package=ml.result_package_id, in_date=in_date)
+            ml._synchronize_quant(ml.quantity_product_uom, ml.location_dest_id, package=ml.result_package_id,
+                                  in_date=in_date)
             if available_qty < 0:
                 ml._free_reservation(
                     ml.product_id, ml.location_id,
@@ -156,7 +157,6 @@ class StockQuant(models.Model):
         res += ['in_date']
         return res
 
-
     def create(self, vals):
         date = self._context.get('force_period_date', fields.Datetime.now())
         if (type(vals) == list):
@@ -171,14 +171,15 @@ class StockValuationLayer(models.Model):
     _inherit = "stock.valuation.layer"
     _order = 'date, id'
 
-    date = fields.Datetime('Inventory Date',)
+    date = fields.Datetime('Inventory Date', )
 
     def create(self, vals):
-        date = self._context.get('force_period_date',fields.Datetime.now())
+        date = self._context.get('force_period_date', fields.Datetime.now())
         if type(vals) is list:
             for val in vals:
-                val.update({'date': date })
+                val.update({'date': date})
         return super().create(vals)
+
 
 class StockScrap(models.Model):
     _inherit = 'stock.scrap'
@@ -192,7 +193,7 @@ class StockScrap(models.Model):
             scrap.name = self.env['ir.sequence'].next_by_code('stock.scrap') or _('New')
             move = self.env['stock.move'].create(scrap._prepare_move_values())
             # master: replace context by cancel_backorder
-            move.with_context(force_period_date=date,is_scrap=True)._action_done()
+            move.with_context(force_period_date=date, is_scrap=True)._action_done()
             scrap.write({'state': 'done'})
             scrap.date_done = date
             if scrap.should_replenish:
@@ -208,12 +209,18 @@ class StockQuantityHistory(models.TransientModel):
         if active_model == 'stock.valuation.layer':
             action = self.env["ir.actions.actions"]._for_xml_id("stock_account.stock_valuation_layer_action")
             # views may not exist in stable => use auto-created ones in this case
-            tree_view = self.env.ref('stock_account.stock_valuation_layer_valuation_at_date_tree_inherited', raise_if_not_found=False)
+            tree_view = self.env.ref('stock_account.stock_valuation_layer_valuation_at_date_tree_inherited',
+                                     raise_if_not_found=False)
             graph_view = self.env.ref('stock_account.stock_valuation_layer_graph', raise_if_not_found=False)
-            action['views'] = [(tree_view.id if tree_view else False, 'tree'),
-                               (self.env.ref('stock_account.stock_valuation_layer_form').id, 'form'),
-                               (self.env.ref('stock_account.stock_valuation_layer_pivot').id, 'pivot'),
-                               (graph_view.id if graph_view else False, 'graph')]
+            # action['views'] = [(tree_view.id if tree_view else False, 'tree'),
+            #                    (self.env.ref('stock_account.stock_valuation_layer_form').id, 'form'),
+            #                    (self.env.ref('stock_account.stock_valuation_layer_pivot').id, 'pivot'),
+            #                    (graph_view.id if graph_view else False, 'graph')]
+            action['views'] = [
+                (self.env.ref('stock_account.stock_valuation_layer_valuation_at_date_tree_inherited').id, 'list'),
+                (self.env.ref('stock_account.stock_valuation_layer_form').id, 'form'),
+                (self.env.ref('stock_account.stock_valuation_layer_pivot').id, 'pivot'),
+                (self.env.ref('stock_account.stock_valuation_layer_graph').id, 'graph')]
             action['domain'] = [('date', '<=', self.inventory_datetime), ('product_id.type', '=', 'product')]
             action['display_name'] = format_datetime(self.env, self.inventory_datetime)
             action['context'] = "{}"
@@ -262,7 +269,7 @@ class StockValuationLayerRevaluation(models.TransientModel):
             'description': description,
             'value': self.added_value,
             'quantity': 0,
-            'date':self.date,
+            'date': self.date,
         }
 
         remaining_qty = sum(remaining_svls.mapped('remaining_qty'))
@@ -282,7 +289,8 @@ class StockValuationLayerRevaluation(models.TransientModel):
 
         # Update the stardard price in case of AVCO/FIFO
         if product_id.categ_id.property_cost_method in ['average', 'fifo']:
-            product_id.with_context(disable_auto_svl=True).standard_price += self.added_value / self.current_quantity_svl
+            product_id.with_context(
+                disable_auto_svl=True).standard_price += self.added_value / self.current_quantity_svl
 
         # If the Inventory Valuation of the product category is automated, create related account move.
         if self.property_valuation != 'real_time':
@@ -306,22 +314,22 @@ class StockValuationLayerRevaluation(models.TransientModel):
             'move_type': 'entry',
             'line_ids': [(0, 0, {
                 'name': _('%(user)s changed stock valuation from  %(previous)s to %(new_value)s - %(product)s',
-                    user=self.env.user.name,
-                    previous=self.current_value_svl,
-                    new_value=self.current_value_svl + self.added_value,
-                    product=product_id.display_name,
-                ),
+                          user=self.env.user.name,
+                          previous=self.current_value_svl,
+                          new_value=self.current_value_svl + self.added_value,
+                          product=product_id.display_name,
+                          ),
                 'account_id': debit_account_id,
                 'debit': abs(self.added_value),
                 'credit': 0,
                 'product_id': product_id.id,
             }), (0, 0, {
                 'name': _('%(user)s changed stock valuation from  %(previous)s to %(new_value)s - %(product)s',
-                    user=self.env.user.name,
-                    previous=self.current_value_svl,
-                    new_value=self.current_value_svl + self.added_value,
-                    product=product_id.display_name,
-                ),
+                          user=self.env.user.name,
+                          previous=self.current_value_svl,
+                          new_value=self.current_value_svl + self.added_value,
+                          product=product_id.display_name,
+                          ),
                 'account_id': credit_account_id,
                 'debit': 0,
                 'credit': abs(self.added_value),

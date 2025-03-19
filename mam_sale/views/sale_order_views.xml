@@ -7,28 +7,31 @@
             <field name="inherit_id" ref="sale.view_order_form"/>
             <field name="arch" type="xml">
                 <xpath expr="//field[@name='payment_term_id']" position="after">
-                    <field name="warehouse_id" options="{'no_create': True}" groups="stock.group_stock_multi_warehouses" force_save="1" readonly="state == 'sale'"/>
+                    <field name="warehouse_id" options="{'no_create': True}" groups="stock.group_stock_multi_warehouses"
+                           force_save="1" readonly="state == 'sale'"/>
                     <field name="commitment_date" required="company_id ==1"/>
-                     <field name="region_id" />
+                    <field name="region_id"/>
                 </xpath>
-                <xpath expr="//tree/field[@name='product_template_id']" position="after">
-                      <field name="allowed_product_temp_ids" column_invisible="True"/>
-                 </xpath>
-                <xpath expr="//tree/field[@name='product_template_id']" position="attributes">
+                <xpath expr="//list/field[@name='product_template_id']" position="after">
+                    <field name="allowed_product_temp_ids" column_invisible="True"/>
+                </xpath>
+                <xpath expr="//list/field[@name='product_template_id']" position="attributes">
                     <attribute name="domain">[('sale_ok', '=', True),('id', 'in', allowed_product_temp_ids)]</attribute>
                 </xpath>
-<!--                <xpath expr="//tree/field[@name='product_id']" position="attributes">-->
-<!--                    <attribute name="domain">[('sale_ok', '=', True), ('region_id', '=', parent.region_id)]</attribute>-->
-<!--                </xpath>-->
-<!--                <xpath expr="//tree/field[@name='product_template_id']" position="attributes">-->
-<!--                    <attribute name="domain">[('sale_ok', '=', True), ('region_id', '=', parent.region_id)]</attribute>-->
-<!--                </xpath>-->
-                <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='other_information']/group[1]/group[@name='sale_shipping']/div[1]" position="replace">
-                   <field name="expected_date"  widget="date"/>
+                <xpath expr="//list/field[@name='product_id']" position="attributes">
+                    <attribute name="domain">[('sale_ok', '=', True), ('region_id', '=', parent.region_id)]</attribute>
                 </xpath>
-                <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='other_information']/group[1]/group[@name='sale_shipping']/label[@for='commitment_date']" position="replace"/>
+                <xpath expr="//list/field[@name='product_template_id']" position="attributes">
+                    <attribute name="domain">[('sale_ok', '=', True), ('region_id', '=', parent.region_id)]</attribute>
+                </xpath>
+                <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='other_information']/group[1]/group[@name='sale_shipping']/div[1]"
+                       position="replace">
+                    <field name="expected_date" widget="date"/>
+                </xpath>
+                <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='other_information']/group[1]/group[@name='sale_shipping']/label[@for='commitment_date']"
+                       position="replace"/>
 
-           </field>
+            </field>
         </record>
     </data>
 </odoo>

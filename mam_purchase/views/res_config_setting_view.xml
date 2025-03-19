@@ -11,9 +11,9 @@
                        <field name="purchase_order_approval"/>
                             <div class="mt16" invisible="not purchase_order_approval">
                                  <field name="purchase_approver_ids" readonly="False">
-                                      <tree editable="bottom">
+                                      <list editable="bottom">
                                              <field name="user_id"/>
-                                      </tree>
+                                      </list>
                                  </field>
                             </div>
                  </setting>

@@ -10,11 +10,11 @@
                     <field name="purchase_order_approval" invisible="1"/>
                  </field>
 
-                  <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='products']/field[@name='order_line']/tree[1]/field[@name='name']" position="after">
+                  <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='products']/field[@name='order_line']/list[1]/field[@name='name']" position="after">
                     <field name="allowed_product_ids" optional="hide"/>
                   </xpath>
 
-                  <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='products']/field[@name='order_line']/tree[1]/field[@name='product_id']" position="attributes">
+                  <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='products']/field[@name='order_line']/list[1]/field[@name='product_id']" position="attributes">
                     <attribute name="domain">["&amp;", ("purchase_ok", "=", True), ("id", "in", allowed_product_ids)]</attribute>
                   </xpath>
 
@@ -44,9 +44,9 @@
                  <field name="date_planned" position="attributes">
                     <attribute name="readonly"> state in ['purchase','done', 'cancel','to approve'] and user_status != 'to approve'</attribute>
                 </field>
-<!--                 <field name="picking_type_id" position="attributes">-->
-<!--                     <attribute name="readonly"> state in ['to approve','purchase','done', 'cancel']</attribute>-->
-<!--                </field>-->
+                 <field name="picking_type_id" position="attributes">
+                     <attribute name="readonly"> state in ['to approve','purchase','done', 'cancel']</attribute>
+                </field>
 
                  <field name="order_line" position="attributes">
                     <attribute name="readonly"> state in ['purchase','done', 'cancel','to approve'] and user_status != 'to approve'</attribute>
@@ -58,19 +58,19 @@
                      <button name="%(mam_purchase.purchase_refuse_wizard_action)d"  type="action" string="Refuse Order"
                              class="oe_highlight" invisible = "user_status != 'to approve'" />
 
-                    <!--name="button_refuse"-->
+<!--                    name="button_refuse"-->
 
                  </xpath>
                  <xpath expr="//page[@name='purchase_delivery_invoice']" position="after">
                      <page string="Approver(s)" name="purchase_approvers"  invisible = "purchase_order_approval == False" >
-                            <field name="approver_ids" mode="tree,kanban"  readonly = "state in ['to approve','done','purchase']">
-                                <tree editable="bottom" decoration-success="status=='approve'" decoration-warning="status in ['to approve','waiting']" decoration-danger="(status in ('cancel','refused'))">
+                            <field name="approver_ids" mode="list,kanban"  readonly = "state in ['to approve','done','purchase']">
+                                <list editable="bottom" decoration-success="status=='approve'" decoration-warning="status in ['to approve','waiting']" decoration-danger="(status in ('cancel','refused'))">
                                     <field name="user_id" string="Approver" readonly = "status != 'new'"/>
                                     <field name="existing_order_user_ids" column_invisible="True"/>
                                     <field name="company_id" column_invisible="True"/>
                                     <field name="status"/>
 
-                                </tree>
+                                </list>
                                 <kanban class="o_kanban_mobile">
                                     <field name="user_id"/>
                                     <field name="status"/>

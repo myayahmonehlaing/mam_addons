@@ -54,7 +54,7 @@
                          </field>
                     </field>
         </record>
-            <record model="ir.actions.act_window" id="stock.action_picking_tree_all">
+        <record model="ir.actions.act_window" id="stock.action_picking_tree_all">
             <field name="name">Transfers</field>
             <field name="context">{'default_immediate_transfer':True,'contact_display': 'partner_address', 'default_company_id': allowed_company_ids[0]}</field>
         </record>
