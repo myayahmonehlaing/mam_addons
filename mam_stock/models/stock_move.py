@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
-
+from collections import Counter, defaultdict
+from odoo.osv import expression
 from odoo import _, api, fields, tools, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import OrderedSet, groupby
-from odoo.tools.float_utils import float_compare, float_is_zero, float_round
+from odoo.tools import float_compare, float_is_zero, format_list,float_round
 from odoo.tools.misc import format_datetime
 
 
@@ -65,59 +66,70 @@ class StockMoveLine(models.Model):
         ml_ids_tracked_without_lot = OrderedSet()
         ml_ids_to_delete = OrderedSet()
         ml_ids_to_create_lot = OrderedSet()
+        ml_ids_to_check = defaultdict(OrderedSet)
+
         for ml in self:
             # Check here if `ml.quantity` respects the rounding of `ml.product_uom_id`.
             uom_qty = float_round(ml.quantity, precision_rounding=ml.product_uom_id.rounding, rounding_method='HALF-UP')
             precision_digits = self.env['decimal.precision'].precision_get('Product Unit of Measure')
             quantity = float_round(ml.quantity, precision_digits=precision_digits, rounding_method='HALF-UP')
             if float_compare(uom_qty, quantity, precision_digits=precision_digits) != 0:
-                raise UserError(_('The quantity done for the product "%s" doesn\'t respect the rounding precision '
-                                  'defined on the unit of measure "%s". Please change the quantity done or the '
+                raise UserError(_('The quantity done for the product "%(product)s" doesn\'t respect the rounding precision '
+                                  'defined on the unit of measure "%(unit)s". Please change the quantity done or the '
                                   'rounding precision of your unit of measure.',
-                                  ml.product_id.display_name, ml.product_uom_id.name))
+                                  product=ml.product_id.display_name, unit=ml.product_uom_id.name))
 
-            quantity_float_compared = float_compare(ml.quantity, 0, precision_rounding=ml.product_uom_id.rounding)
-            if quantity_float_compared > 0:
-                if ml.product_id.tracking != 'none':
-                    picking_type_id = ml.move_id.picking_type_id
-                    if picking_type_id:
-                        if picking_type_id.use_create_lots:
-                            # If a picking type is linked, we may have to create a production lot on
-                            # the fly before assigning it to the move line if the user checked both
-                            # `use_create_lots` and `use_existing_lots`.
-                            if ml.lot_name and not ml.lot_id:
-                                lot = self.env['stock.lot'].search([
-                                    ('company_id', '=', ml.company_id.id),
-                                    ('product_id', '=', ml.product_id.id),
-                                    ('name', '=', ml.lot_name),
-                                ], limit=1)
-                                if lot:
-                                    ml.lot_id = lot.id
-                                else:
-                                    ml_ids_to_create_lot.add(ml.id)
-                        elif not picking_type_id.use_create_lots and not picking_type_id.use_existing_lots:
-                            # If the user disabled both `use_create_lots` and `use_existing_lots`
-                            # checkboxes on the picking type, he's allowed to enter tracked
-                            # products without a `lot_id`.
-                            continue
-                    elif ml.is_inventory:
-                        # If an inventory adjustment is linked, the user is allowed to enter
-                        # tracked products without a `lot_id`.
-                        continue
+            qty_done_float_compared = float_compare(ml.quantity, 0, precision_rounding=ml.product_uom_id.rounding)
+            if qty_done_float_compared > 0:
+                if ml.product_id.tracking == 'none':
+                    continue
+                picking_type_id = ml.move_id.picking_type_id
+                if not picking_type_id and not ml.is_inventory and not ml.lot_id:
+                    ml_ids_tracked_without_lot.add(ml.id)
+                    continue
+                if not picking_type_id or ml.lot_id or (not picking_type_id.use_create_lots and not picking_type_id.use_existing_lots):
+                    # If the user disabled both `use_create_lots` and `use_existing_lots`
+                    # checkboxes on the picking type, he's allowed to enter tracked
+                    # products without a `lot_id`.
+                    continue
+                if picking_type_id.use_create_lots:
+                    ml_ids_to_check[(ml.product_id, ml.company_id)].add(ml.id)
+                else:
+                    ml_ids_tracked_without_lot.add(ml.id)
 
-                    if not ml.lot_id and ml.id not in ml_ids_to_create_lot:
-                        ml_ids_tracked_without_lot.add(ml.id)
-            elif quantity_float_compared < 0:
+            elif qty_done_float_compared < 0:
                 raise UserError(_('No negative quantities allowed'))
             elif not ml.is_inventory:
                 ml_ids_to_delete.add(ml.id)
 
+        for (product, company), mls in ml_ids_to_check.items():
+            mls = self.env['stock.move.line'].browse(mls)
+            lots = self.env['stock.lot'].search([
+                '|', ('company_id', '=', False), ('company_id', '=', ml.company_id.id),
+                ('product_id', '=', product.id),
+                ('name', 'in', mls.mapped('lot_name')),
+            ])
+            lots = {lot.name: lot for lot in lots}
+            for ml in mls:
+                lot = lots.get(ml.lot_name)
+                if lot:
+                    ml.lot_id = lot.id
+                elif ml.lot_name:
+                    ml_ids_to_create_lot.add(ml.id)
+                else:
+                    ml_ids_tracked_without_lot.add(ml.id)
+
         if ml_ids_tracked_without_lot:
             mls_tracked_without_lot = self.env['stock.move.line'].browse(ml_ids_tracked_without_lot)
-            raise UserError(_('You need to supply a Lot/Serial Number for product: \n - ') +
-                            '\n - '.join(mls_tracked_without_lot.mapped('product_id.display_name')))
-        ml_to_create_lot = self.env['stock.move.line'].browse(ml_ids_to_create_lot)
-        ml_to_create_lot._create_and_assign_production_lot()
+            products_list = "\n".join(f"- {product_name}" for product_name in mls_tracked_without_lot.mapped("product_id.display_name"))
+            raise UserError(
+                _(
+                    "You need to supply a Lot/Serial Number for product:\n%(products)s",
+                    products=products_list,
+                ),
+            )
+        if ml_ids_to_create_lot:
+            self.env['stock.move.line'].browse(ml_ids_to_create_lot)._create_and_assign_production_lot()
 
         mls_to_delete = self.env['stock.move.line'].browse(ml_ids_to_delete)
         mls_to_delete.unlink()
@@ -127,13 +139,15 @@ class StockMoveLine(models.Model):
 
         # Now, we can actually move the quant.
         ml_ids_to_ignore = OrderedSet()
+        quants_cache = self.env['stock.quant']._get_quants_by_products_locations(
+            mls_todo.product_id, mls_todo.location_id | mls_todo.location_dest_id,
+            extra_domain=['|', ('lot_id', 'in', mls_todo.lot_id.ids), ('lot_id', '=', False)])
 
-        for ml in mls_todo:
+        for ml in mls_todo.with_context(quants_cache=quants_cache):
             # if this move line is force assigned, unreserve elsewhere if needed
             ml._synchronize_quant(-ml.quantity_product_uom, ml.location_id, action="reserved")
             available_qty, in_date = ml._synchronize_quant(-ml.quantity_product_uom, ml.location_id)
-            ml._synchronize_quant(ml.quantity_product_uom, ml.location_dest_id, package=ml.result_package_id,
-                                  in_date=in_date)
+            ml._synchronize_quant(ml.quantity_product_uom, ml.location_dest_id, package=ml.result_package_id, in_date=in_date)
             if available_qty < 0:
                 ml._free_reservation(
                     ml.product_id, ml.location_id,
@@ -209,19 +223,12 @@ class StockQuantityHistory(models.TransientModel):
         if active_model == 'stock.valuation.layer':
             action = self.env["ir.actions.actions"]._for_xml_id("stock_account.stock_valuation_layer_action")
             # views may not exist in stable => use auto-created ones in this case
-            tree_view = self.env.ref('stock_account.stock_valuation_layer_valuation_at_date_tree_inherited',
-                                     raise_if_not_found=False)
-            graph_view = self.env.ref('stock_account.stock_valuation_layer_graph', raise_if_not_found=False)
-            # action['views'] = [(tree_view.id if tree_view else False, 'tree'),
-            #                    (self.env.ref('stock_account.stock_valuation_layer_form').id, 'form'),
-            #                    (self.env.ref('stock_account.stock_valuation_layer_pivot').id, 'pivot'),
-            #                    (graph_view.id if graph_view else False, 'graph')]
             action['views'] = [
                 (self.env.ref('stock_account.stock_valuation_layer_valuation_at_date_tree_inherited').id, 'list'),
                 (self.env.ref('stock_account.stock_valuation_layer_form').id, 'form'),
                 (self.env.ref('stock_account.stock_valuation_layer_pivot').id, 'pivot'),
                 (self.env.ref('stock_account.stock_valuation_layer_graph').id, 'graph')]
-            action['domain'] = [('date', '<=', self.inventory_datetime), ('product_id.type', '=', 'product')]
+            action['domain'] = [('date', '<=', self.inventory_datetime), ('product_id.is_storable', '=', 'product')]
             action['display_name'] = format_datetime(self.env, self.inventory_datetime)
             action['context'] = "{}"
             return action
@@ -232,11 +239,14 @@ class StockValuationLayerRevaluation(models.TransientModel):
     _inherit = 'stock.valuation.layer.revaluation'
 
     def action_validate_revaluation(self):
-        """ Revaluate the stock for `self.product_id` in `self.company_id`.
+        """ Adjust the valuation of layers `self.adjusted_layer_ids` for
+        `self.product_id` in `self.company_id`, or the entire stock for that
+        product if no layers are specified (all layers with positive remaining
+        quantity).
 
-        - Change the stardard price with the new valuation by product unit.
+        - Change the standard price with the new valuation by product unit.
         - Create a manual stock valuation layer with the `added_value` of `self`.
-        - Distribute the `added_value` on the remaining_value of layers still in stock (with a remaining quantity)
+        - Distribute the `added_value` on the remaining_value of the layers
         - If the Inventory Valuation of the product category is automated, create
         related account move.
         """
@@ -245,52 +255,87 @@ class StockValuationLayerRevaluation(models.TransientModel):
             raise UserError(_("The added value doesn't have any impact on the stock valuation"))
 
         product_id = self.product_id.with_company(self.company_id)
+        lot_id = self.lot_id.with_company(self.company_id)
 
-        remaining_svls = self.env['stock.valuation.layer'].search([
+        remaining_domain = [
             ('product_id', '=', product_id.id),
             ('remaining_qty', '>', 0),
             ('company_id', '=', self.company_id.id),
-        ])
+        ]
+        if lot_id:
+            remaining_domain.append(('lot_id', '=', lot_id.id))
+        layers_with_qty = self.env['stock.valuation.layer'].search(remaining_domain)
+        adjusted_layers = self.adjusted_layer_ids or layers_with_qty
 
-        # Create a manual stock valuation layer
-        if self.reason:
-            description = _("Manual Stock Valuation: %s.", self.reason)
-        else:
-            description = _("Manual Stock Valuation: No Reason Given.")
-        if product_id.categ_id.property_cost_method == 'average':
-            description += _(
-                " Product cost updated from %(previous)s to %(new_cost)s.",
-                previous=product_id.standard_price,
-                new_cost=product_id.standard_price + self.added_value / self.current_quantity_svl
-            )
+        description = _("Manual Stock Valuation: %s.", self.reason or _("No Reason Given"))
+        # Update the stardard price in case of AVCO/FIFO
+        cost_method = product_id.categ_id.property_cost_method
+        if cost_method in ['average', 'fifo']:
+            previous_cost = lot_id.standard_price if lot_id else product_id.standard_price
+            total_product_qty = sum(layers_with_qty.mapped('remaining_qty'))
+            if lot_id:
+                lot_id.with_context(disable_auto_svl=True).standard_price += self.added_value / total_product_qty
+            product_id.with_context(disable_auto_svl=True).standard_price += self.added_value / product_id.quantity_svl
+            if self.lot_id:
+                description += _(
+                    " lot/serial number cost updated from %(previous)s to %(new_cost)s.",
+                    previous=previous_cost,
+                    new_cost=lot_id.standard_price
+                )
+            else:
+                description += _(
+                    " Product cost updated from %(previous)s to %(new_cost)s.",
+                    previous=previous_cost,
+                    new_cost=product_id.standard_price
+                )
+
         revaluation_svl_vals = {
             'company_id': self.company_id.id,
             'product_id': product_id.id,
             'description': description,
             'value': self.added_value,
+            'lot_id': self.lot_id.id,
             'quantity': 0,
             'date': self.date,
         }
 
-        remaining_qty = sum(remaining_svls.mapped('remaining_qty'))
-        remaining_value = self.added_value
+        qty_by_lots = defaultdict(float)
 
+        remaining_qty = sum(adjusted_layers.mapped('remaining_qty'))
+        remaining_value = self.added_value
         remaining_value_unit_cost = self.currency_id.round(remaining_value / remaining_qty)
-        for svl in remaining_svls:
+
+        # adjust all layers by the unit value change per unit, except the last layer which gets
+        # whatever is left. This avoids rounding issues e.g. $10 on 3 products => 3.33, 3.33, 3.34
+        for svl in adjusted_layers:
+            if product_id.lot_valuated and not lot_id:
+                qty_by_lots[svl.lot_id.id] += svl.remaining_qty
             if float_is_zero(svl.remaining_qty - remaining_qty, precision_rounding=self.product_id.uom_id.rounding):
-                svl.remaining_value += remaining_value
+                taken_remaining_value = remaining_value
             else:
                 taken_remaining_value = remaining_value_unit_cost * svl.remaining_qty
-                svl.remaining_value += taken_remaining_value
-                remaining_value -= taken_remaining_value
-                remaining_qty -= svl.remaining_qty
+            if float_compare(svl.remaining_value + taken_remaining_value, 0,
+                             precision_rounding=self.product_id.uom_id.rounding) < 0:
+                raise UserError(
+                    _('The value of a stock valuation layer cannot be negative. Landed cost could be use to correct a specific transfer.'))
+
+            svl.remaining_value += taken_remaining_value
+            remaining_value -= taken_remaining_value
+            remaining_qty -= svl.remaining_qty
+
+        previous_value_svl = self.current_value_svl
+
+        if qty_by_lots:
+            vals = revaluation_svl_vals.copy()
+            total_qty = sum(adjusted_layers.mapped('remaining_qty'))
+            revaluation_svl_vals = []
+            for lot, qty in qty_by_lots.items():
+                value = self.added_value * qty / total_qty
+                revaluation_svl_vals.append(
+                    dict(vals, value=value, lot_id=lot)
+                )
 
         revaluation_svl = self.env['stock.valuation.layer'].create(revaluation_svl_vals)
-
-        # Update the stardard price in case of AVCO/FIFO
-        if product_id.categ_id.property_cost_method in ['average', 'fifo']:
-            product_id.with_context(
-                disable_auto_svl=True).standard_price += self.added_value / self.current_quantity_svl
 
         # If the Inventory Valuation of the product category is automated, create related account move.
         if self.property_valuation != 'real_time':
@@ -305,38 +350,42 @@ class StockValuationLayerRevaluation(models.TransientModel):
             debit_account_id = accounts.get('stock_valuation') and accounts['stock_valuation'].id
             credit_account_id = self.account_id.id
 
-        move_vals = {
+        move_description = _(
+            '%(user)s changed stock valuation from  %(previous)s to %(new_value)s - %(product)s\n%(reason)s',
+            user=self.env.user.name,
+            previous=previous_value_svl,
+            new_value=previous_value_svl + self.added_value,
+            product=product_id.display_name,
+            reason=description,
+            )
+
+        if self.adjusted_layer_ids:
+            adjusted_layer_descriptions = [f"{layer.reference} (id: {layer.id})" for layer in self.adjusted_layer_ids]
+            move_description += _("\nAffected valuation layers: %s", format_list(self.env, adjusted_layer_descriptions))
+
+        move_vals = [{
             'journal_id': self.account_journal_id.id or accounts['stock_journal'].id,
             'company_id': self.company_id.id,
             'ref': _("Revaluation of %s", product_id.display_name),
-            'stock_valuation_layer_ids': [(6, None, [revaluation_svl.id])],
+            'stock_valuation_layer_ids': [(6, None, [svl.id])],
             'date': self.date or fields.Date.today(),
             'move_type': 'entry',
             'line_ids': [(0, 0, {
-                'name': _('%(user)s changed stock valuation from  %(previous)s to %(new_value)s - %(product)s',
-                          user=self.env.user.name,
-                          previous=self.current_value_svl,
-                          new_value=self.current_value_svl + self.added_value,
-                          product=product_id.display_name,
-                          ),
+                'name': move_description,
                 'account_id': debit_account_id,
-                'debit': abs(self.added_value),
+                'debit': abs(svl.value),
                 'credit': 0,
-                'product_id': product_id.id,
+                'product_id': svl.product_id.id,
             }), (0, 0, {
-                'name': _('%(user)s changed stock valuation from  %(previous)s to %(new_value)s - %(product)s',
-                          user=self.env.user.name,
-                          previous=self.current_value_svl,
-                          new_value=self.current_value_svl + self.added_value,
-                          product=product_id.display_name,
-                          ),
+                'name': move_description,
                 'account_id': credit_account_id,
                 'debit': 0,
-                'credit': abs(self.added_value),
-                'product_id': product_id.id,
+                'credit': abs(svl.value),
+                'product_id': svl.product_id.id,
             })],
-        }
+        } for svl in revaluation_svl]
         account_move = self.env['account.move'].create(move_vals)
         account_move._post()
 
         return True
+
