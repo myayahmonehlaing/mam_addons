@@ -90,6 +90,34 @@ class HrExpenseSheet(models.Model):
             self.write({'state': 'approve', 'user_id': responsible_id})
         return result
 
+    def action_sheet_move_post(self):
+        super().action_sheet_move_post()
+        # Ensure state updates to 'post' after successful posting
+        self.state='post'
+        self.approval_state='approve'
+
+    def _track_subtype(self, init_values):
+        self.ensure_one()
+        if 'state' not in init_values:
+            return super()._track_subtype(init_values)
+
+        match self.state:
+            case 'draft':
+                return self.env.ref('hr_expense.mt_expense_reset')
+            case 'cancel':
+                return self.env.ref('hr_expense.mt_expense_refused')
+            case 'done':
+                return self.env.ref('hr_expense.mt_expense_paid')
+            case 'approve':
+                if init_values['state'] in {'post', 'done'}:  # Reverting state
+                    subtype = 'hr_expense.mt_expense_entry_draft' if self.account_move_ids else 'hr_expense.mt_expense_entry_delete'
+                    return self.env.ref(subtype)
+                return self.env.ref('hr_expense.mt_expense_approved')
+            case 'post':
+                self.write({'state': 'done'})
+            case _:
+                return super()._track_subtype(init_values)
+
     def _update_next_approvers(self, new_status, approver, only_next_approver, cancel_activities=False):
         approvers_updated = self.env['hr.expense.approver']
 
@@ -125,14 +153,11 @@ class HrExpenseSheet(models.Model):
                 )
         self.activity_update()
 
-
-
-    def action_reset_approval_expense_sheets(self):
-        res = super().action_reset_approval_expense_sheets()
+    def action_reset_expense_sheets(self):
+        res = super().action_reset_expense_sheets()
         self.approver_ids.write({'status': 'new'})
         self.activity_unlink(['mam_expense.mail_activity_data_expense_approval'])
         return res
-
 
 class HrExpenseApprover(models.Model):
     _name = 'hr.expense.approver'
