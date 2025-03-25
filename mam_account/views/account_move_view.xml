@@ -108,9 +108,13 @@
                 <xpath expr="//group[@id='header_right_group']/field[@name='invoice_date'][1]" position="attributes">
                     <attribute name="readonly">state != 'draft' and user_status != 'to approve' </attribute>
                 </xpath>
-<!--                <xpath expr="//group[@id='header_right_group']/field[@name='invoice_date']" position="attributes">-->
-<!--                    <attribute name="readonly">state=='posted'</attribute>-->
-<!--                </xpath>-->
+                <xpath expr="//group[@id='header_right_group']/field[@name='date']" position="attributes">
+                    <attribute name="readonly">state != 'draft' and user_status != 'to approve' </attribute>
+                </xpath>
+
+                <xpath expr="//group[@id='header_right_group']/field[@name='date'][1]" position="attributes">
+                    <attribute name="readonly">state != 'draft' and user_status != 'to approve' </attribute>
+                </xpath>
 
                 <xpath expr="//notebook/page[@id='invoice_tab']/field[@name='invoice_line_ids']" position="attributes">
                     <attribute name="readonly">state != 'draft' and user_status != 'to approve'</attribute>
